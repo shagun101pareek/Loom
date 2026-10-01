@@ -11,6 +11,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces), "Iowan Old Style", Palatino, Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,4 +25,19 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+}
+
+html.intro-lock,
+html.intro-lock body {
+  overflow: hidden;
+}
+
+.screen-push-character {
+  transform: translate3d(var(--screen-push-from, -120vw), 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-push-overlay {
+    display: none !important;
+  }
 }
