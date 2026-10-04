@@ -39,9 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Intro animation stays on this machine and is not published.
-/public/intro/
-/src/components/landing-cover.tsx
-/src/components/portfolio-intro-transition.tsx
-/src/data/
