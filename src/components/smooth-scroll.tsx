@@ -23,6 +23,19 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     lenis.on("scroll", onScroll);
 
+    // The intro sets data-intro="playing" and needs the page locked underneath.
+    const syncIntroLock = () => {
+      if (document.documentElement.dataset.intro === "playing") lenis.stop();
+      else lenis.start();
+    };
+    syncIntroLock();
+
+    const introLock = new MutationObserver(syncIntroLock);
+    introLock.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-intro"],
+    });
+
     const tick = (time: number) => {
       lenis.raf(time * 1000);
     };
@@ -31,6 +44,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      introLock.disconnect();
       gsap.ticker.remove(tick);
       lenis.destroy();
     };
