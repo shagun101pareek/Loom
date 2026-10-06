@@ -135,3 +135,111 @@ html[data-intro="playing"] body {
     display: none;
   }
 }
+
+/* Centre split. The landing page is painted twice and clipped into
+   halves; scroll translates those halves apart. Where I Work is the
+   layer underneath and stays put for the length of the track. */
+.split-track {
+  position: relative;
+  height: calc(var(--split-vh, 100dvh) * 2);
+}
+
+.split-sticky {
+  position: sticky;
+  top: 0;
+  height: var(--split-vh, 100dvh);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.split-under {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.split-panel {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.split-panel-left {
+  left: 0;
+  width: calc(50% + 1px);
+}
+
+.split-panel-right {
+  left: 50%;
+  width: calc(50% + 1px);
+}
+
+.split-panel-sheet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100cqi;
+}
+
+.split-panel-right .split-panel-sheet {
+  transform: translate3d(-50cqi, 0, 0);
+}
+
+.landing-fallback {
+  display: none;
+}
+
+.landing-character {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: translate3d(var(--landing-character-x, 0px), var(--landing-character-y, 0px), 0);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+html[data-intro="done"] .landing-character {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .where-hero {
+    min-height: 100dvh;
+  }
+
+  .landing-fallback {
+    display: block;
+    min-height: 100dvh;
+  }
+
+  .landing-fallback .landing-hero {
+    min-height: 100dvh;
+  }
+
+  .split-track {
+    height: auto;
+  }
+
+  .split-sticky {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+
+  .split-under {
+    position: relative;
+    inset: auto;
+  }
+
+  .split-panel {
+    display: none;
+  }
+}

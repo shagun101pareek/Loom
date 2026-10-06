@@ -176,6 +176,24 @@ function progressWhenHandReaches(targetX: number, metrics: Metrics) {
   return 1;
 }
 
+/** Keep her last frame on the landing page once the overlay leaves. */
+function freezeLandingCharacters(source: HTMLCanvasElement, character: HTMLElement) {
+  const x = Number(gsap.getProperty(character, "x"));
+  const y = Number(gsap.getProperty(character, "y"));
+  const root = document.documentElement;
+  root.style.setProperty("--landing-character-x", `${Number.isFinite(x) ? x : 0}px`);
+  root.style.setProperty("--landing-character-y", `${Number.isFinite(y) ? y : 0}px`);
+
+  const frames = document.querySelectorAll<HTMLCanvasElement>("[data-landing-character]");
+  frames.forEach((frame) => {
+    if (frame.closest(".landing-fallback")) return;
+    if (source.width < 2 || source.height < 2) return;
+    frame.width = source.width;
+    frame.height = source.height;
+    frame.getContext("2d")?.drawImage(source, 0, 0);
+  });
+}
+
 function drawFrame(
   canvas: HTMLCanvasElement,
   sheet: HTMLImageElement,
@@ -238,7 +256,12 @@ export function PortfolioIntroTransition({
     // CSS hides the overlay when reduced motion is requested, so the name page
     // is what they land on. Skipping the timeline avoids a second render here.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
+    if (reduce) {
+      document.documentElement.dataset.intro = "reduced";
+      return () => {
+        delete document.documentElement.dataset.intro;
+      };
+    }
 
     const root = rootRef.current;
     const character = characterRef.current;
@@ -321,7 +344,8 @@ export function PortfolioIntroTransition({
           onComplete: () => {
             removeResize();
             if (gate.cancelled) return;
-            delete document.documentElement.dataset.intro;
+            freezeLandingCharacters(canvas, character);
+            document.documentElement.dataset.intro = "done";
             setActive(false);
           },
         });
@@ -337,15 +361,16 @@ export function PortfolioIntroTransition({
           0,
         );
 
-        const name = root.querySelector<HTMLElement>("[data-intro-name]");
+        const names = [...root.querySelectorAll<HTMLElement>("[data-intro-name]")];
+        const name = names[0];
         if (name) {
-          gsap.set(name, { y: INTRO_TUNING.nameOffsetY, force3D: true });
+          gsap.set(names, { y: INTRO_TUNING.nameOffsetY, force3D: true });
           const nameLeft = name.getBoundingClientRect().left;
           const nameAt =
             progressWhenHandReaches(nameLeft - INTRO_TUNING.nameLead, metrics) *
             duration;
           timeline.to(
-            name,
+            names,
             {
               y: 0,
               duration: INTRO_TUNING.nameDuration,
