@@ -25,8 +25,13 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     // The intro sets data-intro="playing" and needs the page locked underneath.
     const syncIntroLock = () => {
-      if (document.documentElement.dataset.intro === "playing") lenis.stop();
-      else lenis.start();
+      if (document.documentElement.dataset.intro === "playing") {
+        lenis.stop();
+        return;
+      }
+      window.scrollTo(0, 0);
+      lenis.scrollTo(0, { immediate: true, force: true });
+      lenis.start();
     };
     syncIntroLock();
 

@@ -1,8 +1,8 @@
 /** First screen, held still behind the splitting page. */
 export function WhereIWorkHero() {
   return (
-    <div className="where-hero flex h-full w-full flex-col items-center justify-center bg-[#f3f0ea] px-6 text-center text-[#171717]">
-      <h2 className="text-[clamp(3.75rem,10vw,8.5rem)] leading-[0.88] tracking-[-0.055em]">
+    <div className="where-hero flex h-full w-full flex-col justify-end bg-[#f3f0ea] px-6 pb-[16vh] text-[#171717] md:px-16">
+      <h2 className="text-[clamp(3.5rem,8.5vw,7.25rem)] leading-[0.88] tracking-[-0.055em]">
         <span className="block font-light">Where</span>
         <span className="block font-medium">I Work</span>
       </h2>

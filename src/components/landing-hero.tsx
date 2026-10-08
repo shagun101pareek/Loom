@@ -1,5 +1,3 @@
-import pushTrack from "@/data/girl-push-track.json";
-
 type LandingHeroProps = {
   /** The live intro settles these names. Decorative copies stay still. */
   settle?: boolean;
@@ -18,12 +16,6 @@ export function LandingHero({ settle = true }: LandingHeroProps) {
           <span className="block font-light">Pareek</span>
         </h1>
       </div>
-      <canvas
-        data-landing-character=""
-        className="landing-character"
-        aria-hidden="true"
-        style={{ aspectRatio: `${pushTrack.frameWidth} / ${pushTrack.frameHeight}` }}
-      />
     </div>
   );
 }
