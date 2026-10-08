@@ -176,24 +176,6 @@ function progressWhenHandReaches(targetX: number, metrics: Metrics) {
   return 1;
 }
 
-/** Keep her last frame on the landing page once the overlay leaves. */
-function freezeLandingCharacters(source: HTMLCanvasElement, character: HTMLElement) {
-  const x = Number(gsap.getProperty(character, "x"));
-  const y = Number(gsap.getProperty(character, "y"));
-  const root = document.documentElement;
-  root.style.setProperty("--landing-character-x", `${Number.isFinite(x) ? x : 0}px`);
-  root.style.setProperty("--landing-character-y", `${Number.isFinite(y) ? y : 0}px`);
-
-  const frames = document.querySelectorAll<HTMLCanvasElement>("[data-landing-character]");
-  frames.forEach((frame) => {
-    if (frame.closest(".landing-fallback")) return;
-    if (source.width < 2 || source.height < 2) return;
-    frame.width = source.width;
-    frame.height = source.height;
-    frame.getContext("2d")?.drawImage(source, 0, 0);
-  });
-}
-
 function drawFrame(
   canvas: HTMLCanvasElement,
   sheet: HTMLImageElement,
@@ -338,13 +320,12 @@ export function PortfolioIntroTransition({
         apply(0, metrics);
 
         // The clip plays straight through. The frame stays put and the
-        // page edge follows her hand. The name settles as that edge
-        // reaches it, then the overlay unmounts.
+        // page edge follows her hand. She then steps the rest of the way
+        // off the right, so the landing that remains is only the name.
         const timeline = gsap.timeline({
           onComplete: () => {
             removeResize();
             if (gate.cancelled) return;
-            freezeLandingCharacters(canvas, character);
             document.documentElement.dataset.intro = "done";
             setActive(false);
           },
@@ -381,6 +362,44 @@ export function PortfolioIntroTransition({
             nameAt,
           );
         }
+
+        // Continue the same rightward speed until she has left the screen.
+        // A plain object is tweened so this cannot touch her until the clip ends.
+        const exit = { t: 0, from: 0, to: 0, y: 0 };
+        timeline.call(
+          () => {
+            seam.style.opacity = "0";
+            pressure.style.opacity = "0";
+          },
+          undefined,
+          ">",
+        );
+        timeline.to(
+          exit,
+          {
+            t: 1,
+            ease: "none",
+            immediateRender: false,
+            duration: 0.32,
+            onStart: () => {
+              const width = character.offsetWidth || window.innerWidth;
+              const currentX = Number(gsap.getProperty(character, "x")) || 0;
+              const palmScreen = currentX + PALMS[FRAME_COUNT - 1][0] * width;
+              const clearance = Math.max(56, width * 0.08);
+              exit.from = currentX;
+              exit.to = currentX + Math.max(clearance, window.innerWidth + clearance - palmScreen);
+              exit.y = Number(gsap.getProperty(character, "y")) || 0;
+            },
+            onUpdate: () => {
+              gsap.set(character, {
+                x: exit.from + (exit.to - exit.from) * exit.t,
+                y: exit.y,
+                force3D: true,
+              });
+            },
+          },
+          "<",
+        );
       }, root);
     };
 

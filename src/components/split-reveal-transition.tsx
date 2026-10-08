@@ -10,9 +10,8 @@ gsap.registerPlugin(ScrollTrigger);
 
 /**
  * After the girl animation, scroll opens the landing page from the centre.
- * The track is two viewports tall: the first keeps the landing stuck in
- * place, and that same scroll distance drives the two halves apart.
- * Where I Work sits behind them and does not move until the doors are open.
+ * The extra viewport of the track is the scroll that drives the halves.
+ * Once they have fully opened, scrolling back up leaves them open.
  */
 export function SplitRevealTransition() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -27,13 +26,6 @@ export function SplitRevealTransition() {
 
     const syncViewport = () => {
       document.documentElement.style.setProperty("--split-vh", `${window.innerHeight}px`);
-      if (document.documentElement.dataset.intro !== "done") return;
-      const frame = left.querySelector<HTMLCanvasElement>(".landing-character");
-      if (!frame || frame.offsetHeight < 2) return;
-      const x = (window.innerWidth - frame.offsetWidth) / 2;
-      const y = (window.innerHeight - frame.offsetHeight) / 2;
-      document.documentElement.style.setProperty("--landing-character-x", `${x}px`);
-      document.documentElement.style.setProperty("--landing-character-y", `${y}px`);
     };
 
     syncViewport();
@@ -42,13 +34,25 @@ export function SplitRevealTransition() {
     if (reduce) return;
 
     let ctx: gsap.Context | undefined;
-    const ease = gsap.parseEase("power2.inOut");
+    let settled = false;
+
+    const applyOpen = (progress: number) => {
+      const opened = Math.min(1, Math.max(0, progress));
+      if (opened <= 0) {
+        gsap.set([left, right], { clearProps: "transform" });
+        return;
+      }
+      gsap.set(left, { xPercent: -100 * opened, force3D: true });
+      gsap.set(right, { xPercent: 100 * opened, force3D: true });
+    };
 
     const setup = () => {
       if (ctx) return;
       // Overflow unlocks with data-intro="done". Measure after that reflow.
       void document.documentElement.offsetHeight;
       syncViewport();
+      window.scrollTo(0, 0);
+      applyOpen(0);
 
       ctx = gsap.context(() => {
         ScrollTrigger.create({
@@ -56,18 +60,19 @@ export function SplitRevealTransition() {
           start: "top top",
           end: "bottom bottom",
           onUpdate: (self) => {
-            const opened = ease(self.progress);
-            if (opened <= 0) {
-              gsap.set([left, right], { clearProps: "transform" });
+            const travelled = Math.max(1, track.offsetHeight - window.innerHeight);
+            if (!settled && window.scrollY >= travelled - 1) settled = true;
+            if (settled) {
+              applyOpen(1);
               return;
             }
-            gsap.set(left, { xPercent: -100 * opened, force3D: true });
-            gsap.set(right, { xPercent: 100 * opened, force3D: true });
+            applyOpen(window.scrollY <= 0 ? 0 : self.progress);
           },
         });
       }, track);
 
       ScrollTrigger.refresh();
+      applyOpen(0);
     };
 
     const onIntro = () => {

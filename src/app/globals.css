@@ -50,6 +50,7 @@ html[data-intro="playing"] body {
   position: fixed;
   inset: 0;
   z-index: 40;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -141,7 +142,7 @@ html[data-intro="playing"] body {
    layer underneath and stays put for the length of the track. */
 .split-track {
   position: relative;
-  height: calc(var(--split-vh, 100dvh) * 2);
+  height: calc(var(--split-vh, 100dvh) * 2.35);
 }
 
 .split-sticky {
@@ -190,24 +191,6 @@ html[data-intro="playing"] body {
 
 .landing-fallback {
   display: none;
-}
-
-.landing-character {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: block;
-  width: 100%;
-  height: auto;
-  transform: translate3d(var(--landing-character-x, 0px), var(--landing-character-y, 0px), 0);
-  opacity: 0;
-  pointer-events: none;
-  user-select: none;
-}
-
-html[data-intro="done"] .landing-character {
-  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
