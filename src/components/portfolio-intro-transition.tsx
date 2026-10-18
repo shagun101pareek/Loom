@@ -7,33 +7,34 @@ import pushTrack from "@/data/girl-push-track.json";
 /**
  * Intro timing and travel.
  *
- * Speed is the crossing packed into `duration`: shorter is faster.
- * The tear stays on her outstretched hand, so the reveal follows her
- * unless `revealLead` opens the screen ahead of her palm.
- * One progress value also picks her sprite frame. This clip already
- * walks her across the frame, so the frame stays put and the page
- * edge follows her hand.
+ * One continuous progress value drives the sprite, the curtain edge on
+ * her palm, and the short exit that carries her off after the sheet is
+ * open. No second timeline beat — the push keeps flowing until the name
+ * page is left alone.
  */
 export const INTRO_TUNING = {
-  /** Seconds of the clip. Playback stays even so the page matches her. */
-  duration: 3.5,
-  tabletDuration: 3.5,
-  mobileDuration: 3.5,
-  /** The clip's own timing. No extra ease. */
+  /** Seconds for the full push + exit. Shorter is faster. */
+  duration: 2.2,
+  tabletDuration: 2.2,
+  mobileDuration: 2.2,
+  /** Even playback so the curtain stays locked to her hand. */
   ease: "none",
   /** How far the remaining landing screen is shoved, in px. */
-  screenPush: 22,
+  screenPush: 36,
   /** Depth of the dent at her palm, in px. */
-  bulge: 64,
-  mobileBulge: 36,
-  /** Extra px the tear opens ahead of her palm. 0 keeps it on her hand. */
-  revealLead: 0,
-  revealLeadMobile: 0,
-  /** Name settle. It starts `nameLead` px before the tear reaches the name. */
-  nameOffsetY: 28,
-  nameDuration: 1.15,
-  nameEase: "power3.out",
-  nameLead: 72,
+  bulge: 78,
+  mobileBulge: 44,
+  /**
+   * Tear tip vs drawn palm. 0 = boundary on the tracked palm.
+   * Negative pulls the wall back onto the hand if markers sit past the contact.
+   */
+  handAlign: 0,
+  handAlignMobile: 0,
+  /** Name rises as her hand reaches it — same continuous motion. */
+  nameOffsetY: 22,
+  nameDuration: 0.95,
+  nameEase: "power2.out",
+  nameLead: 64,
   mobileMaxWidth: 767,
   tabletMaxWidth: 1023,
 } as const;
@@ -42,10 +43,31 @@ const FRAME_COUNT = pushTrack.frameCount;
 const COLUMNS = pushTrack.columns;
 const FRAME_WIDTH = pushTrack.frameWidth;
 const FRAME_HEIGHT = pushTrack.frameHeight;
-const PALMS = pushTrack.palms;
+const TRAIL_RATIO = pushTrack.trailRatio;
 
-function frameIndex(progress: number) {
-  return Math.round(clamp(progress, 0, 1) * (FRAME_COUNT - 1));
+/** Raw palm markers from the sheet — must match the drawn frame exactly. */
+const PALMS: Array<[number, number]> = pushTrack.palms.map(([x, y]) => [x, y]);
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function isMobile(width: number) {
+  return width <= INTRO_TUNING.mobileMaxWidth;
+}
+
+/** Sprite frame for drawing — discrete sheet cells. */
+function frameIndex(clipProgress: number) {
+  return Math.round(clamp(clipProgress, 0, 1) * (FRAME_COUNT - 1));
+}
+
+/**
+ * Palm for the curtain edge — always the same cell the canvas is drawing.
+ * Interpolating here used to open the wall ahead of (or behind) the sprite
+ * hand between frames; locking to the drawn frame keeps them aligned.
+ */
+function palmAt(clipProgress: number): [number, number] {
+  return PALMS[frameIndex(clipProgress)];
 }
 
 type Metrics = {
@@ -53,8 +75,7 @@ type Metrics = {
   vh: number;
   imgW: number;
   imgH: number;
-  startX: number;
-  endX: number;
+  originX: number;
 };
 
 type Tear = {
@@ -65,14 +86,21 @@ type Tear = {
   handY: number;
   span: number;
   notch: number;
+  seamOpacity: number;
 };
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function isMobile(width: number) {
-  return width <= INTRO_TUNING.mobileMaxWidth;
+/**
+ * Map timeline progress → clip + exit without a pause.
+ * Clip runs through `trailRatio`; the rest continues her rightward push
+ * off-screen while the curtain stays fully open.
+ */
+function phases(progress: number) {
+  const p = clamp(progress, 0, 1);
+  const trail = clamp(TRAIL_RATIO, 0.85, 0.98);
+  if (p <= trail) {
+    return { clip: p / trail, exit: 0 };
+  }
+  return { clip: 1, exit: (p - trail) / (1 - trail) };
 }
 
 function measure(character: HTMLElement): Metrics | null {
@@ -82,30 +110,40 @@ function measure(character: HTMLElement): Metrics | null {
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const originX = (vw - imgW) / 2;
 
   return {
     vw,
     vh,
     imgW,
     imgH,
-    startX: originX,
-    endX: originX,
+    originX: (vw - imgW) / 2,
   };
 }
 
 function tearAt(progress: number, metrics: Metrics): Tear {
   const mobile = isMobile(metrics.vw);
-  const x = metrics.startX + (metrics.endX - metrics.startX) * progress;
+  const { clip, exit } = phases(progress);
   const y = (metrics.vh - metrics.imgH) / 2;
-  const palm = PALMS[frameIndex(progress)];
+  const palm = palmAt(clip);
+  const clearance = Math.max(56, metrics.imgW * 0.08);
+  const palmAtEnd = PALMS[FRAME_COUNT - 1][0] * metrics.imgW;
+  const exitTravel = Math.max(
+    clearance,
+    metrics.vw + clearance - (metrics.originX + palmAtEnd),
+  );
+  const x = metrics.originX + exit * exitTravel;
+
+  const align = mobile ? INTRO_TUNING.handAlignMobile : INTRO_TUNING.handAlign;
   const handScreenX = x + palm[0] * metrics.imgW;
   const handScreenY = y + palm[1] * metrics.imgH;
-  const lead = mobile ? INTRO_TUNING.revealLeadMobile : INTRO_TUNING.revealLead;
-  const tip = clamp(handScreenX + lead, 0, metrics.vw);
+  // Once she is exiting, keep the sheet fully open — she has already pushed through.
+  // Tip is the drawn palm so the wall boundary and her hand stay locked together.
+  const tip = exit > 0 ? metrics.vw : clamp(handScreenX + align, 0, metrics.vw);
   const bulge = mobile ? INTRO_TUNING.mobileBulge : INTRO_TUNING.bulge;
-  const opening = tip > 0 && tip < metrics.vw ? tip / metrics.vw : 0;
-  const span = Math.max(110, metrics.vh * 0.22);
+  const opening = tip > 0 && tip < metrics.vw ? tip / metrics.vw : tip >= metrics.vw ? 1 : 0;
+  const span = Math.max(130, metrics.vh * 0.26);
+  // Soften the seam as the opening finishes so it dissolves into the reveal.
+  const edgeFade = tip >= metrics.vw - 1 ? 0 : clamp(1 - opening * opening, 0, 1);
 
   return {
     x,
@@ -115,18 +153,20 @@ function tearAt(progress: number, metrics: Metrics): Tear {
     handY: clamp(handScreenY, span, metrics.vh - span),
     span,
     notch: bulge * Math.sin(Math.PI * opening),
+    seamOpacity: edgeFade,
   };
 }
 
-/** Smooth dent centered on her palm, shared by the clip and the seam. */
+/** Soft fabric dent whose peak sits exactly on her palm — shared by clip and seam. */
 function edgePoints(tear: Tear, metrics: Metrics) {
   const { base, tip, handY, span } = tear;
   const depth = tip - base;
-  const steps = 14;
+  const steps = 20;
   const points: Array<[number, number]> = [[base, 0]];
 
   for (let i = 0; i <= steps; i++) {
     const t = -1 + (2 * i) / steps;
+    // Peak must hit 1 at t=0 so the wall meets her hand, not sit behind it.
     const falloff = (1 - t * t) ** 2;
     points.push([base + depth * falloff, handY + t * span]);
   }
@@ -159,27 +199,27 @@ function durationFor(width: number) {
   return INTRO_TUNING.duration;
 }
 
-/** Progress (0–1) when her palm, plus any lead, reaches targetX. */
+/** Timeline progress when her palm reaches targetX. */
 function progressWhenHandReaches(targetX: number, metrics: Metrics) {
-  const lead = isMobile(metrics.vw)
-    ? INTRO_TUNING.revealLeadMobile
-    : INTRO_TUNING.revealLead;
+  const align = isMobile(metrics.vw)
+    ? INTRO_TUNING.handAlignMobile
+    : INTRO_TUNING.handAlign;
   const last = FRAME_COUNT - 1;
+  const trail = clamp(TRAIL_RATIO, 0.85, 0.98);
 
   for (let i = 0; i <= last; i++) {
-    const progress = i / last;
-    const x = metrics.startX + (metrics.endX - metrics.startX) * progress;
-    const hand = x + PALMS[i][0] * metrics.imgW + lead;
-    if (hand >= targetX) return progress;
+    const clip = i / last;
+    const hand = metrics.originX + PALMS[i][0] * metrics.imgW + align;
+    if (hand >= targetX) return clip * trail;
   }
 
-  return 1;
+  return trail;
 }
 
 function drawFrame(
   canvas: HTMLCanvasElement,
   sheet: HTMLImageElement,
-  progress: number,
+  clipProgress: number,
 ) {
   if (!sheet.complete || sheet.naturalWidth < 2) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -197,7 +237,7 @@ function drawFrame(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  const index = frameIndex(progress);
+  const index = frameIndex(clipProgress);
   const col = index % COLUMNS;
   const row = Math.floor(index / COLUMNS);
   ctx.clearRect(0, 0, bw, bh);
@@ -271,12 +311,14 @@ export function PortfolioIntroTransition({
 
     const apply = (progress: number, metrics: Metrics) => {
       const tear = tearAt(progress, metrics);
+      const { clip } = phases(progress);
+
       gsap.set(character, {
         x: tear.x,
         y: tear.y,
         force3D: true,
       });
-      drawFrame(canvas, sheet, progress);
+      drawFrame(canvas, sheet, clip);
       coverEl.style.clipPath = coverClip(tear, metrics);
       gsap.set(shiftEl, {
         x: (tear.tip / metrics.vw) * INTRO_TUNING.screenPush,
@@ -287,14 +329,15 @@ export function PortfolioIntroTransition({
       seam.setAttribute("viewBox", `0 0 ${metrics.vw} ${metrics.vh}`);
       glow.setAttribute("d", d);
       line.setAttribute("d", d);
-      seam.style.opacity = d ? "1" : "0";
+      seam.style.opacity = d ? String(tear.seamOpacity) : "0";
 
       gsap.set(pressure, {
         x: tear.tip - 110,
         y: tear.handY - 110,
         force3D: true,
       });
-      pressure.style.opacity = tear.notch > 8 ? "1" : "0";
+      pressure.style.opacity =
+        tear.notch > 8 ? String(Math.min(1, tear.notch / 40) * tear.seamOpacity) : "0";
     };
 
     const start = () => {
@@ -319,9 +362,7 @@ export function PortfolioIntroTransition({
         const duration = durationFor(metrics.vw);
         apply(0, metrics);
 
-        // The clip plays straight through. The frame stays put and the
-        // page edge follows her hand. She then steps the rest of the way
-        // off the right, so the landing that remains is only the name.
+        // One tween for the whole push: sprite, curtain, and exit.
         const timeline = gsap.timeline({
           onComplete: () => {
             removeResize();
@@ -362,44 +403,6 @@ export function PortfolioIntroTransition({
             nameAt,
           );
         }
-
-        // Continue the same rightward speed until she has left the screen.
-        // A plain object is tweened so this cannot touch her until the clip ends.
-        const exit = { t: 0, from: 0, to: 0, y: 0 };
-        timeline.call(
-          () => {
-            seam.style.opacity = "0";
-            pressure.style.opacity = "0";
-          },
-          undefined,
-          ">",
-        );
-        timeline.to(
-          exit,
-          {
-            t: 1,
-            ease: "none",
-            immediateRender: false,
-            duration: 0.32,
-            onStart: () => {
-              const width = character.offsetWidth || window.innerWidth;
-              const currentX = Number(gsap.getProperty(character, "x")) || 0;
-              const palmScreen = currentX + PALMS[FRAME_COUNT - 1][0] * width;
-              const clearance = Math.max(56, width * 0.08);
-              exit.from = currentX;
-              exit.to = currentX + Math.max(clearance, window.innerWidth + clearance - palmScreen);
-              exit.y = Number(gsap.getProperty(character, "y")) || 0;
-            },
-            onUpdate: () => {
-              gsap.set(character, {
-                x: exit.from + (exit.to - exit.from) * exit.t,
-                y: exit.y,
-                force3D: true,
-              });
-            },
-          },
-          "<",
-        );
       }, root);
     };
 

@@ -4,14 +4,14 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { LandingHero } from "@/components/landing-hero";
-import { WhereIWorkHero, WhereIWorkRest } from "@/components/where-i-work";
+import { WhereIWorkHero } from "@/components/where-i-work";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * After the girl animation, scroll opens the landing page from the centre.
- * The extra viewport of the track is the scroll that drives the halves.
- * Once they have fully opened, scrolling back up leaves them open.
+ * After the girl animation, the name page stays put. Scrolling opens it
+ * from the centre onto Where I Work. The track is two viewports — one
+ * screen of scroll to finish the open — then the next page ends.
  */
 export function SplitRevealTransition() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -78,6 +78,7 @@ export function SplitRevealTransition() {
     const onIntro = () => {
       syncViewport();
       if (document.documentElement.dataset.intro === "done") setup();
+      if (document.documentElement.dataset.intro === "reduced") setup();
     };
     const introWatch = new MutationObserver(onIntro);
     introWatch.observe(document.documentElement, {
@@ -127,8 +128,6 @@ export function SplitRevealTransition() {
             </div>
           </div>
         </div>
-
-        <WhereIWorkRest />
       </section>
 
       <noscript>
