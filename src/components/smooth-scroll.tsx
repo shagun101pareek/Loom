@@ -23,7 +23,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     lenis.on("scroll", onScroll);
 
-    // The intro sets data-intro="playing" and needs the page locked underneath.
+    // Lock while the girl plays; unlock on the name page so scroll can open it.
     const syncIntroLock = () => {
       if (document.documentElement.dataset.intro === "playing") {
         lenis.stop();

@@ -41,6 +41,7 @@ body {
   }
 }
 
+/* Lock scroll only while the girl intro is playing. */
 html[data-intro="playing"],
 html[data-intro="playing"] body {
   overflow: hidden;
@@ -91,12 +92,12 @@ html[data-intro="playing"] body {
 
 .intro-seam-glow {
   stroke: var(--intro-seam-glow);
-  stroke-width: 22;
+  stroke-width: 28;
 }
 
 .intro-seam-line {
   stroke: var(--intro-seam);
-  stroke-width: 1.5;
+  stroke-width: 1.25;
 }
 
 .intro-pressure {
@@ -137,12 +138,11 @@ html[data-intro="playing"] body {
   }
 }
 
-/* Centre split. The landing page is painted twice and clipped into
-   halves; scroll translates those halves apart. Where I Work is the
-   layer underneath and stays put for the length of the track. */
+/* Centre split. Scroll opens the name page from the middle onto
+   Where I Work. The track is two viewports; the sticky stage is one. */
 .split-track {
   position: relative;
-  height: calc(var(--split-vh, 100dvh) * 2.35);
+  height: calc(var(--split-vh, 100dvh) * 2);
 }
 
 .split-sticky {
