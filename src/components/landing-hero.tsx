@@ -10,10 +10,10 @@ export function LandingHero({ settle = true }: LandingHeroProps) {
       <div className="flex h-full min-h-full w-full flex-col items-center justify-center px-6 text-center">
         <h1
           {...(settle ? { "data-intro-name": "" } : {})}
-          className="text-[clamp(3.75rem,10vw,8.5rem)] leading-[0.88] tracking-[-0.055em] text-foreground"
+          className="landing-name text-foreground"
         >
-          <span className="block font-medium">Shagun</span>
-          <span className="block font-light">Pareek</span>
+          <span className="block">Shagun</span>
+          <span className="block">Pareek</span>
         </h1>
       </div>
     </div>

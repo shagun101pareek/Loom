@@ -23,22 +23,26 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     lenis.on("scroll", onScroll);
 
-    // Lock while the girl plays; unlock on the name page so scroll can open it.
-    const syncIntroLock = () => {
-      if (document.documentElement.dataset.intro === "playing") {
+    // Lock while the girl plays or Where I Work is open; unlock on the name page.
+    const syncScrollLock = () => {
+      const intro = document.documentElement.dataset.intro;
+      const split = document.documentElement.dataset.split;
+      if (intro === "playing" || split === "open") {
         lenis.stop();
         return;
       }
-      window.scrollTo(0, 0);
-      lenis.scrollTo(0, { immediate: true, force: true });
+      if (intro === "done" || intro === "reduced") {
+        window.scrollTo(0, 0);
+        lenis.scrollTo(0, { immediate: true, force: true });
+      }
       lenis.start();
     };
-    syncIntroLock();
+    syncScrollLock();
 
-    const introLock = new MutationObserver(syncIntroLock);
-    introLock.observe(document.documentElement, {
+    const scrollLock = new MutationObserver(syncScrollLock);
+    scrollLock.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-intro"],
+      attributeFilter: ["data-intro", "data-split"],
     });
 
     const tick = (time: number) => {
@@ -49,7 +53,7 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
-      introLock.disconnect();
+      scrollLock.disconnect();
       gsap.ticker.remove(tick);
       lenis.destroy();
     };

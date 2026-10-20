@@ -1,30 +1,90 @@
-/** First screen, held still behind the splitting page. */
-export function WhereIWorkHero() {
+import Image from "next/image";
+
+type WorkChapterProps = {
+  eyebrow?: string;
+  title: [string, string];
+  place: string;
+  role: string;
+  blurb: string;
+  imageSrc: string;
+  imageAlt: string;
+  /** Soft cue that the next chapter slides up on scroll. */
+  hint?: string;
+  priority?: boolean;
+};
+
+/** One full-viewport chapter: type bottom-left, workplace image on the right. */
+export function WorkChapter({
+  eyebrow,
+  title,
+  place,
+  role,
+  blurb,
+  imageSrc,
+  imageAlt,
+  hint,
+  priority = false,
+}: WorkChapterProps) {
   return (
-    <div className="where-hero flex h-full w-full flex-col justify-end bg-[#f3f0ea] px-6 pb-[16vh] text-[#171717] md:px-16">
-      <h2 className="text-[clamp(3.5rem,8.5vw,7.25rem)] leading-[0.88] tracking-[-0.055em]">
-        <span className="block font-light">Where</span>
-        <span className="block font-medium">I Work</span>
-      </h2>
-    </div>
+    <article className="work-chapter">
+      <div className="work-chapter-copy">
+        {eyebrow ? <p className="work-chapter-eyebrow">{eyebrow}</p> : null}
+        <h2 className="work-chapter-title">
+          <span className="block font-light">{title[0]}</span>
+          <span className="block font-medium">{title[1]}</span>
+        </h2>
+        <p className="work-chapter-meta">
+          <span>{place}</span>
+          <span className="work-chapter-dot" aria-hidden="true">
+            ·
+          </span>
+          <span>{role}</span>
+        </p>
+        <p className="work-chapter-blurb">{blurb}</p>
+        {hint ? <p className="work-chapter-hint">{hint}</p> : null}
+      </div>
+
+      <div className="work-chapter-media">
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          sizes="(max-width: 767px) 100vw, 52vw"
+          className="object-cover"
+          priority={priority}
+        />
+      </div>
+    </article>
   );
 }
 
-/** Continues in normal document flow once the doors have opened. */
-export function WhereIWorkRest() {
+/** Present workplace — shown first behind the opening name doors. */
+export function WhereIWorkHero() {
   return (
-    <div className="bg-[#f3f0ea] px-6 pb-32 text-[#171717] md:px-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-12 border-t border-[#171717]/10 pt-16 md:pt-24">
-        <p className="max-w-md text-lg font-light leading-relaxed tracking-[-0.02em] text-[#171717]/75">
-          The work, kept with the places it was made.
-        </p>
-        <a
-          href="/work/example"
-          className="w-fit text-sm uppercase tracking-[0.22em] underline decoration-[#171717]/25 underline-offset-8"
-        >
-          Example project
-        </a>
-      </div>
-    </div>
+    <WorkChapter
+      title={["Where", "I Work"]}
+      place="Independent"
+      role="Product designer"
+      blurb="The desk I keep now — remote days, quiet light, work that still feels close to the hand."
+      imageSrc="/work/present.jpg"
+      imageAlt="Current studio workspace with desk and window light"
+      hint="Scroll"
+      priority
+    />
+  );
+}
+
+/** Past workplaces — revealed when the present chapter slides up. */
+export function WhereIUsedToWork() {
+  return (
+    <WorkChapter
+      eyebrow="Before"
+      title={["Where I", "Used to Work"]}
+      place="Studio years"
+      role="2019 — 2024"
+      blurb="Earlier rooms and teams — the places that shaped how I still make things."
+      imageSrc="/work/past.jpg"
+      imageAlt="Earlier studio archive with sketches and soft light"
+    />
   );
 }
