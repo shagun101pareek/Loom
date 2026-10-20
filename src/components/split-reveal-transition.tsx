@@ -4,14 +4,14 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { LandingHero } from "@/components/landing-hero";
-import { WhereIWorkHero } from "@/components/where-i-work";
+import { WorkChapters } from "@/components/work-chapters";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
  * After the girl animation, the name page stays put. Scrolling opens it
- * from the centre onto Where I Work. The track is two viewports — one
- * screen of scroll to finish the open — then the next page ends.
+ * from the centre onto Where I Work. Further wheel slides that chapter
+ * up to reveal Where I Used to Work — still one viewport, no tall track.
  */
 export function SplitRevealTransition() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -46,6 +46,11 @@ export function SplitRevealTransition() {
       gsap.set(right, { xPercent: 100 * opened, force3D: true });
     };
 
+    const lockWhereIWork = () => {
+      document.documentElement.dataset.split = "open";
+      applyOpen(1);
+    };
+
     const setup = () => {
       if (ctx) return;
       // Overflow unlocks with data-intro="done". Measure after that reflow.
@@ -53,6 +58,7 @@ export function SplitRevealTransition() {
       syncViewport();
       window.scrollTo(0, 0);
       applyOpen(0);
+      delete document.documentElement.dataset.split;
 
       ctx = gsap.context(() => {
         ScrollTrigger.create({
@@ -61,7 +67,11 @@ export function SplitRevealTransition() {
           end: "bottom bottom",
           onUpdate: (self) => {
             const travelled = Math.max(1, track.offsetHeight - window.innerHeight);
-            if (!settled && window.scrollY >= travelled - 1) settled = true;
+            if (!settled && window.scrollY >= travelled - 1) {
+              settled = true;
+              lockWhereIWork();
+              return;
+            }
             if (settled) {
               applyOpen(1);
               return;
@@ -98,6 +108,7 @@ export function SplitRevealTransition() {
       introWatch.disconnect();
       window.removeEventListener("resize", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
+      delete document.documentElement.dataset.split;
       ctx?.revert();
     };
   }, []);
@@ -112,7 +123,7 @@ export function SplitRevealTransition() {
         <div ref={trackRef} className="split-track">
           <div className="split-sticky">
             <div className="split-under">
-              <WhereIWorkHero />
+              <WorkChapters />
             </div>
 
             <div ref={leftRef} className="split-panel split-panel-left">

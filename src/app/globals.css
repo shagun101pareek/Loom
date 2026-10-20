@@ -13,6 +13,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Name lockup — large stacked display type, huyml-style. */
+.landing-name {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  text-align: center;
+  /* Sized so a 6-letter line fills the frame like “PHAN” does on huyml. */
+  font-size: clamp(3.5rem, 14vw, 10.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -45,6 +58,22 @@ body {
 html[data-intro="playing"],
 html[data-intro="playing"] body {
   overflow: hidden;
+}
+
+/* Where I Work: full-screen, no scrollbar at all. */
+html[data-split="open"],
+html[data-split="open"] body {
+  overflow: hidden;
+  height: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html[data-split="open"]::-webkit-scrollbar,
+html[data-split="open"] body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .intro-overlay {
@@ -157,6 +186,125 @@ html[data-intro="playing"] body {
   position: absolute;
   inset: 0;
   z-index: 0;
+}
+
+/* Work chapters: present slides up over past inside one viewport. */
+.work-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f3f0ea;
+  touch-action: pan-y;
+}
+
+.work-chapter-layer {
+  position: absolute;
+  inset: 0;
+  background: #f3f0ea;
+}
+
+.work-chapter-past {
+  z-index: 0;
+}
+
+.work-chapter-present {
+  z-index: 1;
+  will-change: transform;
+}
+
+.work-chapter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  height: 100%;
+  width: 100%;
+  background: #f3f0ea;
+  color: #171717;
+}
+
+.work-chapter-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 clamp(1.25rem, 4vw, 4rem) clamp(3.5rem, 12vh, 7rem);
+  min-width: 0;
+}
+
+.work-chapter-eyebrow {
+  margin: 0 0 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #171717 55%, transparent);
+}
+
+.work-chapter-title {
+  margin: 0;
+  font-size: clamp(2.75rem, 7.2vw, 6.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+}
+
+.work-chapter-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 1.35rem 0 0;
+  font-size: clamp(0.95rem, 1.4vw, 1.125rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, #171717 78%, transparent);
+}
+
+.work-chapter-dot {
+  opacity: 0.45;
+}
+
+.work-chapter-blurb {
+  max-width: 22rem;
+  margin: 0.85rem 0 0;
+  font-size: clamp(0.95rem, 1.35vw, 1.1rem);
+  font-weight: 300;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, #171717 68%, transparent);
+}
+
+.work-chapter-hint {
+  margin: 1.75rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #171717 42%, transparent);
+}
+
+.work-chapter-media {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .work-chapter {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(42%, 1fr) auto;
+  }
+
+  .work-chapter-media {
+    order: -1;
+    min-height: 42dvh;
+  }
+
+  .work-chapter-copy {
+    padding: 1.5rem 1.25rem 2.75rem;
+  }
+
+  .work-chapter-title {
+    font-size: clamp(2.5rem, 14vw, 3.75rem);
+  }
 }
 
 .split-panel {
